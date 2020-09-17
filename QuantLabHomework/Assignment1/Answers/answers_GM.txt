@@ -1,0 +1,132 @@
+
+
+#[Question 1a. How long is the reference genome? Hint: Try samtools faidx]
+
+faidx ref.fa
+less -S ref.fa.fai
+233,806
+
+#[Question 1b. How many reads are provided and how long are they? Make sure to measure each file separately Hint: Try FastQC]
+
+4 : fastQC jump2k.1.fq jump2k.2.fq frag180.1.fq  frag180.2.fq
+
+Jump2k.1 : 70355 (50bp each)
+Jump2k.2 : 70355
+Frag180.1 : 35178 (100bp each)
+Frag180.2 : 35178
+
+#[Question 1c. How much coverage do you expect to have? [Hint: A little arthmetic]
+
+coverage = (read count * read length ) / total genome size.
+Jump2k Coverage = (70355*2*50)/233806 = 30.09x coverage 
+Frag180 coveage = (35178*2*100)/233806 = 30.09x coverage 
+All combined: 60.18x coverage
+
+#[Question 1d. Plot the average quality value across the length of the reads [We want a screenshot from FastQC]
+   
+  
+
+
+
+ #Question 2a. How many kmers occur exactly 50 times? [Hint: try jellyfish histo]
+
+jellyfish count -m 21 -s 100M -t 10 -C frag180.1.fq frag180.2.fq jump2k.1.fq jump2k.2.fq
+
+jellyfish histo mer_counts.jf
+1091 times
+
+#[Question 2b. What are the top 10 most frequently occurring kmers [Hint: try jellyfish dump along with sort and head]
+
+jellyfish dump -c -t mer_counts.jf | sort -r -g -k 2 | head -n 10 > topKmer.txt
+
+GCCCACTAATTAGTGGGCGCC   105
+CGCCCACTAATTAGTGGGCGC   104
+CCCACTAATTAGTGGGCGCCG   104
+ACGGCGCCCACTAATTAGTGG   101
+CAGGCCAGCTTATAAGCTGGC   98
+AACAGGCCAGCTTATAAGCTG   98
+ACAGGCCAGCTTATAAGCTGG   97
+AGGCCAGCTTATAAGCTGGCC   95
+AGCATCGCCCACATGTGGGCG   83
+GCATCGCCCACATGTGGGCGA   82
+
+#[Question 2c. What is the estimated genome size based on the kmer frequencies? [Hint: upload the jellyfish histogram to GenomeScope and report the min “Genome Haploid Length” in the “Results” section]
+
+233,468 bp
+
+# Question 2d. How well does the GenomeScope genome size estimate compare to the reference genome? [Hint: In a sentence or two]
+
+The minimum estimation is less than 400bp off reference whereas the maximum is one less the value calculated in question 1. 
+
+
+#[Question 3a. How many contigs were produced? [Hint: try grep -c '>' contigs.fasta]
+
+mkdir contigs_output.fasta
+
+spades.py --pe1-1 frag180.1.fq --pe1-2 frag180.2.fq --mp1-1 jump2k.1.fq --mp1-2 jump2k.2.fq -o asm -t 4 -k 31 
+spades.py -1 frag180.1.fq -2 frag180.2.fq  -o contigs_output.fasta/ --only-assembler
+ 4 contigs 
+
+#[Question 3b. What is the total length of the contigs? [Hint: try samtools faidx, plus a short script if necessary]
+
+NODE_1_length_105831_cov_8.724767    105831  
+NODE_2_length_47861_cov_8.636719        47861   
+NODE_3_length_41352_cov_8.695402        41352   
+NODE_4_length_39423_cov_8.568253        39423   
+Sum: 234467
+
+#[Question 3c. What is the size of your largest contig? [Hint: check samtools faidx plus sort -n]
+105831  
+
+#[Question 3d. What is the contig N50 size? [Hint: Write a short script if necessary]
+
+[1] Add up the number of base pairs in the genome [2] divide by 2 to find the base pair in the middle of the genome [3] figure out which contig that base pair would exist in [4] the length of that contig is your N50
+N50 = 47861
+
+
+#[Question 4a. What is the average identify of your assembly compared to the reference? [Hint: try dnadiff]
+
+dnadiff ref.fa asm_nest/contigs.fasta
+
+100% identity; makes sense given 60x coverge
+
+#[Question 4b. What is the length of the longest alignment [Hint: try nucmer and show-coords]
+
+show-coords out.delta
+105831bp is the max alignment to the reference
+
+#[Question 4c. How many insertions and deletions are in the assembly? [Hint: try dnadiff]Mu
+
+1 insertion 712bp long
+
+
+#[Question 5a. What is the position of the insertion in your assembly? Provide the corresponding position in the reference. [Hint: try show-coords]
+
+13853
+
+#[Question 5b. How long is the novel insertion? [Hint: try show-coords]
+
+712bp long
+
+#[Question 5c. What is the DNA sequence of the encoded message? [Hint: try samtools faidx to extract the insertion]
+
+samtools faidx contigs.fasta NODE_3_length_41352_cov_20.588756:13854-14565 > coded_seq.txt
+
+python ~/QuantLabHomework/asm/ported_decoder.py --decode --rev_comp --input contigs.fasta
+
+CTAACGATTTACATCGGGAAAGCTTAATGCAATTCACGCAGATATTCAGCTTAGAAGGTA
+CGCAGCGGTGACGGGGTGCGGTCCATAATCTATGAAGCTATGAATTCGTACCTCAAGTAA
+TGTTTTCTTCGCTGCAGTTCAGAAGTGATAAAGGTATCCCGCTTAGCCTGGCATACTTTG
+TGCGTTCGTACCGCCCAGCATTAATGACTTGTGTAGGCAAGTAATGAACGACTCTTCTAC
+GCCGCGCCTAACCTCCGCACATAATGGCAGCATGTGGTAGTTACATACGCACAGAAGTGG
+TTCGGTTTTAACTATAGTCAGATATGAATAAGCTGCGTGTGTCGTTGTGTCGGCGTGTCG
+TACTTACCTCCTGACATAGGTGAATTTCAGCCTACTGTAAGTTTGGAGTCGCGCTCTTTT
+CTTATTATATTCTTTGGTATGTGTGTGATGGGTTCGGGCGTGTATTGATGTCTCTAAGGC
+TCATGTTAGTGTTTATTTGGTCAGTTATGACGGTGTTCCTGTCGTACGTGTTGGCTTAGC
+GGACTTGTAGACGGGATCAAGGTTGTCTGACCCTCCGGTCGACCGTGGGTCGGCCGTCCC
+GGCCAGAATACAAGCCGCTTAGACTTTCGAAAGAGGGTAAGTTACTACGCGCGAACGTTA
+TACCTCGTTTCAGTATGCACTCCCTTAAGTCACTCAGAAAAGACTAAGGGGCT
+
+#[Question 5d. What is the secret message? [Hint: Run the provided script ported_decoder.py to decode the string from 5c.]
+
+Congratulations to the 2020 CMDB @ JHU class!  Keep on looking for little green aliens...
