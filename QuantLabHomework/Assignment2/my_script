@@ -1,0 +1,24 @@
+#!/bin/bash
+
+bwa mem -R "@RG\tID:Sample1\tSM:Sample1" sacCer3.fa A01_09.fastq > seqalign09.sam
+bwa mem -R "@RG\tID:Sample2\tSM:Sample2" sacCer3.fa A01_23.fastq > seqalign23.sam
+bwa mem -R "@RG\tID:Sample3\tSM:Sample3" sacCer3.fa A01_27.fastq > seqalign27.sam
+bwa mem -R "@RG\tID:Sample4\tSM:Sample4" sacCer3.fa A01_35.fastq > seqalign35.sam
+bwa mem -R "@RG\tID:Sample5\tSM:Sample5" sacCer3.fa A01_62.fastq > seqalign62.sam
+bwa mem -R "@RG\tID:Sample6\tSM:Sample6" sacCer3.fa A01_11.fastq > seqalign11.sam
+bwa mem -R "@RG\tID:Sample7\tSM:Sample7" sacCer3.fa A01_24.fastq > seqalign24.sam
+bwa mem -R "@RG\tID:Sample8\tSM:Sample8" sacCer3.fa A01_31.fastq > seqalign31.sam
+bwa mem -R "@RG\tID:Sample9\tSM:Sample9" sacCer3.fa A01_39.fastq > seqalign39.sam
+bwa mem -R "@RG\tID:Sample10\tSM:Sample10" sacCer3.fa A01_63.fastq > seqalign63.sam
+
+samtools view -S -b A01_$i.sam > A01_$i.bam
+
+freebayes -f sacCer3.fa output*.bam -p 1 --genotype-qualities > var.vcf
+
+cat var.vcf | vcffilter -f "QUAL > 20" > results.vcf
+
+vcfallelicprimitives -k -g results.vcf > decomposed.vcf
+
+snpeff download R64-1-1.86
+
+snpeff ann R64-1-1.86 decomposed.vcf > snpeff.vcf
